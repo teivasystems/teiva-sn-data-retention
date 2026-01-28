@@ -29,8 +29,195 @@ The architecture is designed for **regulated enterprises** (e.g. healthcare, med
 
 ---
 
-## 3. High-Level Architecture Overview
-TBD
+## 3. High-Level Architecture Overview (Extended)
+
+The Legal Data Retention & Deletion solution is implemented as a **custom ServiceNow application** that embeds regulatory governance directly into operational workflows.
+
+The architecture follows a **layered and service-oriented model**, separating user interaction, orchestration, policy decisioning, execution, and audit evidence to ensure scalability, security, and auditability.
+
+### 3.1 High-Level System Flow
+[Employee Center / Portal]
+|
+v
+[Legal & Compliance Catalog Item]
+|
+v
+[Legal Case Management (Custom App)]
+|
++–> [Policy & Rules Engine]
+|
++–> [Retention Scheduler]
+|
++–> [Legal Hold Service]
+|
++–> [Execution Worker]
+|
+v
+[Audit & Evidence Store]
+
+Each component is described in detail below.
+
+---
+
+### 3.2 Employee Center / Portal
+
+**Purpose**  
+Provides the primary entry point for employees and business users to submit Legal and Compliance-related requests.
+
+**Responsibilities**
+- Capture case context (country, case type, data sensitivity)
+- Guide users through jurisdiction-aware forms
+- Provide transparency into case status and lifecycle
+
+**Architectural Notes**
+- Uses standard ServiceNow UX (Employee Center / Service Portal)
+- No sensitive logic is implemented at this layer
+- Acts as a controlled intake channel, not a data store
+
+---
+
+### 3.3 Legal & Compliance Catalog Item
+
+**Purpose**  
+Acts as the formal initiation mechanism for Legal Data Retention cases.
+
+**Responsibilities**
+- Standardize intake across regions and jurisdictions
+- Trigger case creation in the custom application scope
+- Enforce mandatory data classification at submission time
+
+**Architectural Notes**
+- Dynamic form logic adapts based on country and case type
+- Prevents incomplete or non-compliant submissions
+- Decouples user experience from backend policy logic
+
+---
+
+### 3.4 Legal Case Management (Custom Application)
+
+**Purpose**  
+Serves as the **central orchestration layer** and system of record for all retention-related activities.
+
+**Responsibilities**
+- Maintain the legal case lifecycle and state model
+- Link sensitive artifacts to cases
+- Track ownership, jurisdiction, and cross-border flags
+- Coordinate policy evaluation, scheduling, holds, and execution
+
+**Architectural Notes**
+- Implemented in a dedicated application scope
+- Stores only the minimum required sensitive data
+- Designed for full traceability and explainability
+
+---
+
+### 3.5 Policy & Rules Engine
+
+**Purpose**  
+Determines *what* must happen to data, *when*, and *how*, based on regulatory and organizational rules.
+
+**Responsibilities**
+- Resolve applicable retention policy per artifact
+- Apply country- and jurisdiction-specific logic
+- Determine disposal method (delete vs anonymize)
+- Generate policy traceability for audit purposes
+
+**Architectural Notes**
+- Table-driven decision model (configuration over code)
+- Scripted logic used only for exceptional cases
+- Policy resolution is deterministic and reproducible
+
+---
+
+### 3.6 Retention Scheduler
+
+**Purpose**  
+Translates policy decisions into **concrete, time-bound execution plans**.
+
+**Responsibilities**
+- Create retention schedules per artifact or case
+- Calculate notification lead times and grace periods
+- Queue execution jobs for future processing
+- Recalculate schedules when policies or case attributes change
+
+**Architectural Notes**
+- Uses scheduled jobs and/or Flow Designer
+- Supports batch-oriented processing
+- Scheduling is reversible until execution occurs
+
+---
+
+### 3.7 Legal Hold Service
+
+**Purpose**  
+Provides a compliance-safe mechanism to **suspend all automated lifecycle actions**.
+
+**Responsibilities**
+- Apply and release legal holds at case or artifact level
+- Enforce immediate suspension of scheduled actions
+- Record hold reason, approvals, and duration
+- Ensure holds override all automation
+
+**Architectural Notes**
+- Hold checks are enforced at both scheduling and execution time
+- Hold lifecycle is fully audited
+- Supports partial and scoped holds
+
+---
+
+### 3.8 Execution Worker
+
+**Purpose**  
+Performs the **actual data lifecycle action** in a controlled, auditable manner.
+
+**Responsibilities**
+- Execute deletion or anonymization logic
+- Re-validate policy and legal hold at runtime
+- Support idempotent and retry-safe execution
+- Handle integration with external systems when required
+
+**Architectural Notes**
+- Implemented as scheduled scripts or scripted APIs
+- Designed for controlled batch execution
+- Failures are isolated and recoverable
+
+---
+
+### 3.9 Audit & Evidence Store
+
+**Purpose**  
+Provides immutable-style evidence to demonstrate regulatory compliance.
+
+**Responsibilities**
+- Record all lifecycle actions and decisions
+- Capture policy version, timestamps, and execution outcome
+- Store notification history and exceptions
+- Support audits without operational disruption
+
+**Architectural Notes**
+- Separate audit tables for clarity and performance
+- Optimized for reporting and evidence export
+- Read-only access for auditors
+
+---
+
+### 3.10 Architectural Characteristics
+
+- **Governance by Design**  
+  Compliance rules are embedded into platform behavior, not enforced manually.
+
+- **Explainability**  
+  Every automated action can be traced back to a policy and decision path.
+
+- **Defense in Depth**  
+  Access control, legal holds, and runtime validation operate independently.
+
+- **Scalability**  
+  Batch-oriented execution and table-driven policies support multi-country rollout.
+
+---
+
+This architecture ensures that data retention and deletion are **predictable, defensible, and operationally sustainable** — even under regulatory scrutiny.
 
 ---
 
